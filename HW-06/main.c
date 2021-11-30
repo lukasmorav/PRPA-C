@@ -1,18 +1,40 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
-int checkABC(char *text)
+int checkABC(char c)
 {
-    for (int i=0; i<strlen(text); i++)
-    {
-        if ((text[i] >= 'A' && text[i] <= 'Z') || text[i] >= 'a' && text[i] <= 'z')
-        {
-            continue;
-        }
+   if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))
+   {
+       return 0;
+   }
 
-        return 0;
+    return 1;
+}
+
+int loadMessage(char *message, int messageSize)
+{
+    int index = 0;
+    while(index <= messageSize)
+    {
+        char c;
+        scanf("%c", &c);
+        //printf("%c\n", c);
+
+        if (c != '\n')
+        {
+            if (checkABC(c)) return 100;
+            message[index] = c;    
+            index ++;
+        }
+        else
+        {
+            break;
+        }
     }
+    
+    //printf("%i\n", index);
+    message[index+1] = '\0';
+    if (index < messageSize)  return 101;
 
     return 1;
 }
@@ -41,18 +63,18 @@ char charShift(char original, int offset)
     return original;
 }
 
-void stringShift(const char* text, char* dest, int offset)
+void stringShift(const char* text, char* dest, int offset, int messageSize)
 {
-    for (int i=0; i<strlen(text); i++)
+    for (int i=0; i<=messageSize; i++)
     {
-        dest[i] = charShift(text[i], offset);
+        if (messageSize == i) dest[i] = '\0'; else dest[i] = charShift(text[i], offset);
     }
 }
 
-int compareStr(const char* text1, const char* text2)
+int compareStr(const char* text1, const char* text2, int messageSize)
 {
     int correctChars = 0;
-    for (int i=0; i<strlen(text1); i++)
+    for (int i=0; i<messageSize; i++)
     {
         if(text1[i] == text2[i])
         {
@@ -66,51 +88,50 @@ int compareStr(const char* text1, const char* text2)
 int main()
 {
     //message loader
-    int messageSize;
+    int messageSize, retVal;
     
-    if (scanf("%i", &messageSize) != 1)
+    if (scanf("%i\n", &messageSize) != 1)
     {
-        fprintf(stderr, "Error: Chybny vstup!\n");
+        fprintf(stderr, "Error: Chybny vstup!");
         return 100;
     }
 
-    char codedMessage[messageSize], halfDecodedMessage[messageSize];
-    scanf("%s%s", codedMessage, halfDecodedMessage);
-    
-    if (strlen(codedMessage) != messageSize || strlen(halfDecodedMessage) != messageSize) //check correct size
+    char codedMessage[messageSize+1], receivedMessage[messageSize+1];
+
+    retVal = loadMessage(codedMessage, messageSize);
+    if (retVal != 1)
     {
-        fprintf(stderr, "Error: Chybna delka vstupu!\n");
-        return 101;
+        if (retVal==100) fprintf(stderr, "Error: Chybny vstup!"); else fprintf(stderr, "Error: Chybna delka vstupu!");
+        return retVal;
     }
 
-    if (!checkABC(codedMessage) || !checkABC(halfDecodedMessage)) //check A-Z or a-z
+    retVal = loadMessage(receivedMessage, messageSize);
+    if (retVal != 1)
     {
-        fprintf(stderr, "Error: Chybny vstup!\n");
-        return 100;
+        if (retVal==100) fprintf(stderr, "Error: Chybny vstup!"); else fprintf(stderr, "Error: Chybna delka vstupu!");
+        return retVal;
     }
 
     //decoding process
     int bestCorrectChars, correctChars, bestOffset;
-    char testMessage[messageSize], decodedMessage[messageSize];
+    char testMessage[messageSize+1], decodedMessage[messageSize+1];
+
+    bestCorrectChars = -1;
 
     for (int i=1; i<=52; i++)
     {
-        stringShift(codedMessage, testMessage, i);
-        correctChars = compareStr(testMessage, halfDecodedMessage);
-        if (&bestCorrectChars == NULL)
-        {
-            bestOffset = i;
-            bestCorrectChars = correctChars;
-        }
-        else if (bestCorrectChars < correctChars)
+        stringShift(codedMessage, testMessage, i, messageSize);
+        correctChars = compareStr(testMessage, receivedMessage, messageSize);
+        if (bestCorrectChars < correctChars)
         {
             bestCorrectChars = correctChars;
             bestOffset = i;
         }
     }
 
-    stringShift(codedMessage, decodedMessage, bestOffset);
+    stringShift(codedMessage, decodedMessage, bestOffset, messageSize);
     printf("%s\n", decodedMessage);
-
+    
     return 0;
 }
+
